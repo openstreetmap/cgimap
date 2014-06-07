@@ -184,7 +184,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
-    ("port", po::value<int>(), "FCGI port number to listen on")
+    ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
     ;
 
   // add the backend options to the options description
@@ -200,8 +200,8 @@ get_options(int argc, char **argv, po::variables_map &options) {
     exit(1);
   }
 
-  if (options.count("daemon") != 0 && options.count("port") == 0) {
-    throw runtime_error("an FCGI port number is required in daemon mode");
+  if (options.count("daemon") != 0 && options.count("socket") == 0) {
+    throw runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
 }
 
@@ -486,7 +486,7 @@ process_requests(int socket, const po::variables_map &options) {
        std::ostringstream out;
 
        if (errno == ENOTSOCK) {
-          out << "FCGI port not set properly, please use the --port option "
+          out << "FCGI port or UNIX socket not set properly, please use the --socket option "
               << "(caused by ENOTSOCK).";
 
        } else {
@@ -577,12 +577,8 @@ main(int argc, char **argv) {
     get_options(argc, argv, options);
 
     // get the socket to use
-    if (options.count("port")) {
-      ostringstream path;
-
-      path << ":" << options["port"].as<int>();
-
-      if ((socket = FCGX_OpenSocket(path.str().c_str(), 5)) < 0) {
+    if (options.count("socket")) {
+      if ((socket = FCGX_OpenSocket(options["socket"].as<string>().c_str(), 5)) < 0) {
 	throw runtime_error("Couldn't open FCGX socket.");
       }
     } else {
