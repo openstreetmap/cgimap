@@ -388,6 +388,14 @@ void writeable_pgsql_selection::select_changeset_discussions() {
   include_changeset_discussions = true;
 }
 
+void writeable_pgsql_selection::drop_nodes() {
+  w.prepared("drop_nodes").exec();
+}
+
+void writeable_pgsql_selection::drop_ways() {
+  w.prepared("drop_ways").exec();
+}
+
 namespace {
 /* this exists solely because converting boost::any seems to just
  * do type equality, with no fall-back to boost::lexical_cast or
@@ -637,6 +645,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "ON (tr.id = rm.member_id AND rm.member_type='Relation') "
           "LEFT JOIN tmp_relations xr ON rm.relation_id = xr.id "
         "WHERE xr.id IS NULL");
+
+  m_connection.prepare("drop_nodes", "TRUNCATE tmp_nodes");
+  m_connection.prepare("drop_ways",  "TRUNCATE tmp_ways");
 
   // clang-format on
 }

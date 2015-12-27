@@ -569,6 +569,13 @@ struct static_data_selection : public data_selection {
     m_include_changeset_comments = true;
   }
 
+  virtual void drop_nodes() {
+    m_nodes.clear();
+  }
+
+  virtual void drop_ways() {
+    m_ways.clear();
+  }
 
 private:
   boost::shared_ptr<database> m_db;

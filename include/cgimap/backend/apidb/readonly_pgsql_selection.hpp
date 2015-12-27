@@ -47,6 +47,9 @@ public:
   int select_changesets(const std::vector<osm_changeset_id_t> &);
   void select_changeset_discussions();
 
+  void drop_nodes();
+  void drop_ways();
+
   /**
    * a factory for the creation of read-only selections, so it
    * can set up prepared statements.

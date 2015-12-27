@@ -527,6 +527,14 @@ void readonly_pgsql_selection::select_changeset_discussions() {
   include_changeset_discussions = true;
 }
 
+void readonly_pgsql_selection::drop_nodes() {
+  sel_nodes.clear();
+}
+
+void readonly_pgsql_selection::drop_ways() {
+  sel_ways.clear();
+}
+
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),

@@ -99,6 +99,12 @@ public:
   /// if this is called then discussions will be included.
   virtual void select_changeset_discussions();
 
+  /// drop any nodes which are in the current selection
+  virtual void drop_nodes() = 0;
+
+  /// drop any ways which are in the current selection
+  virtual void drop_ways() = 0;
+
   /**
    * factory for the creation of data selections. this abstracts away
    * the creation process of transactions, and allows some up-front

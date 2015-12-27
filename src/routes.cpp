@@ -20,6 +20,11 @@
 
 #ifdef ENABLE_EXPERIMENTAL
 #include "cgimap/api06/node_ways_handler.hpp"
+#include "cgimap/api06/node_rels_handler.hpp"
+
+#include "cgimap/api06/way_rels_handler.hpp"
+
+#include "cgimap/api06/relation_rels_handler.hpp"
 #endif /* ENABLE_EXPERIMENTAL */
 
 #ifdef ENABLE_API07
@@ -143,15 +148,22 @@ routes::routes()
 
 #ifdef ENABLE_EXPERIMENTAL
     r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
+    r->add<node_rels_handler>(root_ / "node" / osm_id_ / "relations");
 #endif /* ENABLE_EXPERIMENTAL */
     r->add<node_handler>(root_ / "node" / osm_id_);
     r->add<nodes_handler>(root_ / "nodes");
 
     r->add<way_full_handler>(root_ / "way" / osm_id_ / "full");
+#ifdef ENABLE_EXPERIMENTAL
+    r->add<way_rels_handler>(root_ / "way" / osm_id_ / "relations");
+#endif /* ENABLE_EXPERIMENTAL */
     r->add<way_handler>(root_ / "way" / osm_id_);
     r->add<ways_handler>(root_ / "ways");
 
     r->add<relation_full_handler>(root_ / "relation" / osm_id_ / "full");
+#ifdef ENABLE_EXPERIMENTAL
+    r->add<relation_rels_handler>(root_ / "relation" / osm_id_ / "relations");
+#endif /* ENABLE_EXPERIMENTAL */
     r->add<relation_handler>(root_ / "relation" / osm_id_);
     r->add<relations_handler>(root_ / "relations");
 

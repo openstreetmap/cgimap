@@ -62,7 +62,10 @@ cgimap_staticxml_include_HEADERS = \
 
 if ENABLE_EXPERIMENTAL
 cgimap_api06_include_HEADERS += \
-	include/cgimap/api06/node_ways_handler.hpp
+	include/cgimap/api06/node_ways_handler.hpp \
+	include/cgimap/api06/node_rels_handler.hpp \
+	include/cgimap/api06/way_rels_handler.hpp \
+	include/cgimap/api06/relation_rels_handler.hpp
 endif
 
 if ENABLE_API07
@@ -77,6 +80,8 @@ TESTS += test/test_parse_id_list test/test_oauth test/test_http test/test_parse_
 TESTS += test/changesets.testcore
 if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore
+TESTS += test/node_relations.testcore
+TESTS += test/way_relations.testcore
 endif
 if HAVE_YAJL
 TESTS += test/json.testcore

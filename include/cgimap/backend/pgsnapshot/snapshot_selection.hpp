@@ -36,6 +36,9 @@ public:
   void select_relations_from_relations();
   void select_relations_members_of_relations();
 
+  void drop_nodes();
+  void drop_ways();
+
   /**
    * abstracts the creation of transactions for the writeable
    * data selection.

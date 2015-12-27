@@ -303,6 +303,14 @@ void snapshot_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
 }
 
+void snapshot_selection::drop_nodes() {
+  w.prepared("drop_nodes").exec();
+}
+
+void snapshot_selection::drop_ways() {
+  w.prepared("drop_ways").exec();
+}
+
 snapshot_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts))
 #if PQXX_VERSION_MAJOR >= 4
@@ -476,6 +484,9 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_relations trn ON (rm.relation_id = trn.id) "
           "JOIN relations r ON (rm.relation_id = r.id) "
         "WHERE trn.id IS NULL");
+
+  m_connection.prepare("drop_nodes", "TRUNCATE tmp_nodes");
+  m_connection.prepare("drop_ways", "TRUNCATE tmp_ways");
 
   // clang-format on
 }

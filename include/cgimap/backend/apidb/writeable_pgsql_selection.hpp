@@ -44,6 +44,9 @@ public:
   int select_changesets(const std::vector<osm_changeset_id_t> &);
   void select_changeset_discussions();
 
+  void drop_nodes();
+  void drop_ways();
+
   /**
    * abstracts the creation of transactions for the writeable
    * data selection.
