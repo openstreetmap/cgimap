@@ -8,10 +8,10 @@ using std::vector;
 
 namespace api06 {
 
-node_rels_responder::node_rels_responder(mime::type mt, osm_id_t id_,
+node_rels_responder::node_rels_responder(mime::type mt, osm_nwr_id_t id_,
                                          factory_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_id_t> ids;
+  vector<osm_nwr_id_t> ids;
   ids.push_back(id);
 
   // NOTE: doesn't matter if there are no matching nodes, the API will just return
@@ -27,7 +27,7 @@ node_rels_responder::node_rels_responder(mime::type mt, osm_id_t id_,
 
 node_rels_responder::~node_rels_responder() {}
 
-node_rels_handler::node_rels_handler(request &, osm_id_t id_) : id(id_) {}
+node_rels_handler::node_rels_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
 node_rels_handler::~node_rels_handler() {}
 
