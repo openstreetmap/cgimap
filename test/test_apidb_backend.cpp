@@ -433,6 +433,8 @@ public:
   bool supports_changesets() { return false; }
   int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
   void select_changeset_discussions() {}
+  void drop_nodes() {}
+  void drop_ways() {}
 
   struct factory
     : public data_selection::factory {
