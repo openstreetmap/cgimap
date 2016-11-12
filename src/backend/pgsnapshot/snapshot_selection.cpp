@@ -295,8 +295,15 @@ void snapshot_selection::select_relations_from_way_nodes() {
   w.prepared("relations_from_way_nodes").exec();
 }
 
-void snapshot_selection::select_relations_from_relations() {
-  w.prepared("relations_from_relations").exec();
+void snapshot_selection::select_relations_from_relations(bool drop_existing) {
+  if (drop_existing) {
+    w.prepared("relations_from_relations_replace_1").exec();
+    w.prepared("relations_from_relations_replace_2").exec();
+    w.prepared("relations_from_relations_replace_3").exec();
+    w.prepared("relations_from_relations_replace_4").exec();
+  } else {
+    w.prepared("relations_from_relations").exec();
+  }
 }
 
 void snapshot_selection::select_relations_members_of_relations() {
@@ -484,6 +491,19 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_relations trn ON (rm.relation_id = trn.id) "
           "JOIN relations r ON (rm.relation_id = r.id) "
         "WHERE trn.id IS NULL");
+  m_connection.prepare("relations_from_relations_replace_1",
+    "CREATE TEMPORARY TABLE tmp_relations_2 AS "
+      "SELECT DISTINCT r.id,r.version,r.user_id,r.tstamp,r.changeset_id,r.tags "
+        "FROM tmp_relations tr "
+        "JOIN relation_members rm ON (rm.member_type = 'R' AND rm.member_id = tr.id) "
+          "JOIN relations r ON (rm.relation_id = r.id) "
+        "WHERE trn.id IS NULL");
+  m_connection.prepare("relations_from_relations_replace_2",
+    "TRUNCATE TABLE tmp_relations");
+  m_connection.prepare("relations_from_relations_replace_3",
+    "INSERT INTO tmp_relations SELECT * FROM tmp_relations_2");
+  m_connection.prepare("relations_from_relations_replace_4",
+    "DROP TABLE tmp_relations_2");
 
   m_connection.prepare("drop_nodes", "TRUNCATE tmp_nodes");
   m_connection.prepare("drop_ways", "TRUNCATE tmp_ways");

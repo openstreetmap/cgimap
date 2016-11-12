@@ -82,6 +82,7 @@ if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore
 TESTS += test/node_relations.testcore
 TESTS += test/way_relations.testcore
+TESTS += test/relation_relations.testcore
 endif
 if HAVE_YAJL
 TESTS += test/json.testcore

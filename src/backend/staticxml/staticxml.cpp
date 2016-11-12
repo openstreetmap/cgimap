@@ -491,10 +491,12 @@ struct static_data_selection : public data_selection {
     typedef std::pair<osm_nwr_id_t, relation> value_type;
     BOOST_FOREACH(const value_type &val, m_db->m_relations) {
       const relation &r = val.second;
-      BOOST_FOREACH(const member_info &m, r.m_members) {
-        if ((m.type == element_type_way) && (m_ways.count(m.ref) > 0)) {
-          m_relations.insert(r.m_info.id);
-          break;
+      if (r.m_info.visible) {
+        BOOST_FOREACH(const member_info &m, r.m_members) {
+          if ((m.type == element_type_way) && (m_ways.count(m.ref) > 0)) {
+            m_relations.insert(r.m_info.id);
+            break;
+          }
         }
       }
     }
@@ -513,29 +515,37 @@ struct static_data_selection : public data_selection {
     typedef std::pair<osm_nwr_id_t, relation> value_type;
     BOOST_FOREACH(const value_type &val, m_db->m_relations) {
       const relation &r = val.second;
-      BOOST_FOREACH(const member_info &m, r.m_members) {
-        if ((m.type == element_type_node) && (m_nodes.count(m.ref) > 0)) {
-          m_relations.insert(r.m_info.id);
-          break;
+      if (r.m_info.visible) {
+        BOOST_FOREACH(const member_info &m, r.m_members) {
+          if ((m.type == element_type_node) && (m_nodes.count(m.ref) > 0)) {
+            m_relations.insert(r.m_info.id);
+            break;
+          }
         }
       }
     }
   }
 
-  virtual void select_relations_from_relations() {
+  virtual void select_relations_from_relations(bool drop_existing) {
     typedef std::pair<osm_nwr_id_t, relation> value_type;
     std::set<osm_nwr_id_t> tmp_relations;
     BOOST_FOREACH(const value_type &val, m_db->m_relations) {
       const relation &r = val.second;
-      BOOST_FOREACH(const member_info &m, r.m_members) {
-        if ((m.type == element_type_relation) &&
-            (m_relations.count(m.ref) > 0)) {
-          tmp_relations.insert(r.m_info.id);
-          break;
+      if (r.m_info.visible) {
+        BOOST_FOREACH(const member_info &m, r.m_members) {
+          if ((m.type == element_type_relation) &&
+              (m_relations.count(m.ref) > 0)) {
+            tmp_relations.insert(r.m_info.id);
+            break;
+          }
         }
       }
     }
-    m_relations.insert(tmp_relations.begin(), tmp_relations.end());
+    if (drop_existing) {
+      m_relations.swap(tmp_relations);
+    } else {
+      m_relations.insert(tmp_relations.begin(), tmp_relations.end());
+    }
   }
 
   virtual void select_relations_members_of_relations() {

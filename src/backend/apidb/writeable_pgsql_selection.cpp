@@ -368,7 +368,7 @@ void writeable_pgsql_selection::select_relations_from_nodes() {
   w.prepared("relations_from_nodes").exec();
 }
 
-void writeable_pgsql_selection::select_relations_from_relations() {
+void writeable_pgsql_selection::select_relations_from_relations(bool drop_existing) {
   w.prepared("relations_from_relations").exec();
 }
 

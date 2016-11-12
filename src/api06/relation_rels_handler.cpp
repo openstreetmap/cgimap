@@ -17,7 +17,7 @@ relation_rels_responder::relation_rels_responder(mime::type mt, osm_nwr_id_t id_
   if (sel->select_relations(ids) == 0) {
     throw http::not_found("");
   } else {
-    sel->select_relations_from_relations();
+    sel->select_relations_from_relations(true);
     check_visibility();
   }
 }

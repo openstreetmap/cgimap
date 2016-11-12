@@ -495,7 +495,7 @@ void readonly_pgsql_selection::select_relations_from_nodes() {
   }
 }
 
-void readonly_pgsql_selection::select_relations_from_relations() {
+void readonly_pgsql_selection::select_relations_from_relations(bool) {
   if (!sel_relations.empty()) {
     insert_results(
         w.prepared("relation_parents_of_relations")(sel_relations).exec(),

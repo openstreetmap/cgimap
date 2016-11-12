@@ -468,8 +468,15 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     // execute the request
     process_request(req, limiter, generator, route, factory, empty_store);
 
-    // compare the result to what we're expecting
-    check_response(in, req.buffer());
+    try {
+      // compare the result to what we're expecting
+      check_response(in, req.buffer());
+    } catch (const std::exception &e) {
+      if (getenv("VERBOSE") != NULL) {
+        std::cout << "====\n" << req.buffer().str() << "\n====\n";
+      }
+      throw;
+    }
 
     // output test case name if verbose output is requested
     if (getenv("VERBOSE") != NULL) {

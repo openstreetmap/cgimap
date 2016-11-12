@@ -428,7 +428,7 @@ public:
   void select_relations_from_ways() {}
   void select_nodes_from_way_nodes() {}
   void select_relations_from_nodes() {}
-  void select_relations_from_relations() {}
+  void select_relations_from_relations(bool) {}
   void select_relations_members_of_relations() {}
   bool supports_changesets() { return false; }
   int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }

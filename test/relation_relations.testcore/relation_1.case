@@ -1,0 +1,13 @@
+Request-Method: GET
+Request-URI: /api/0.6/relation/1/relations
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="2" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2016-10-30T13:22:00Z">
+    <member role="something" type="relation" ref="1"/>
+    <tag k="type" v="test2"/>
+  </relation>
+</osm>
