@@ -1,12 +1,16 @@
 #include "cgimap/config.hpp"
 #include "cgimap/http.hpp"
+
 #include <vector>
+
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
+
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
 #include <sstream>
+#include <utility>
 
 namespace al = boost::algorithm;
 using std::string;

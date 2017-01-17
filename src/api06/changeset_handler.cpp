@@ -4,6 +4,7 @@
 #include "cgimap/config.hpp"
 
 #include <sstream>
+#include <utility>
 
 using std::stringstream;
 using std::vector;

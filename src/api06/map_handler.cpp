@@ -2,8 +2,11 @@
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/logger.hpp"
+
 #include <boost/format.hpp>
+
 #include <map>
+#include <utility>
 
 using boost::format;
 using std::string;

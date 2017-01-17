@@ -35,6 +35,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
 
+#include <utility>
+
 using std::auto_ptr;
 using std::list;
 using std::string;

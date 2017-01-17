@@ -36,6 +36,8 @@ DEALINGS IN THE SOFTWARE.
 #include <list>
 #include <stdexcept>
 #include <string>
+#include <utility>
+
 #include <boost/config.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>

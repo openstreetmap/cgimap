@@ -4,7 +4,10 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <utility>
+
 #include <boost/shared_ptr.hpp>
+
 #include "cgimap/config.hpp"
 
 #ifdef HAVE_LIBZ

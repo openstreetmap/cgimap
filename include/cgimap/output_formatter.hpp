@@ -4,9 +4,12 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
+
 #include <list>
 #include <vector>
 #include <stdexcept>
+#include <utility>
+
 #include <boost/optional.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 

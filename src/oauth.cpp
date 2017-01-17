@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include <sstream>
+#include <utility>
 
 #include <boost/foreach.hpp>
 #ifdef HAVE_BOOST_LOCALE

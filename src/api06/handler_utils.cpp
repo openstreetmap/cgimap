@@ -2,8 +2,11 @@
 
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
+
 #include <map>
 #include <vector>
+#include <utility>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>

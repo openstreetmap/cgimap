@@ -1,8 +1,10 @@
 /* -*- coding: utf-8 -*- */
 #include "cgimap/http.hpp"
+
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 namespace {
 

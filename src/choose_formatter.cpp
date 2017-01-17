@@ -18,6 +18,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <utility>
+
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/std_pair.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
