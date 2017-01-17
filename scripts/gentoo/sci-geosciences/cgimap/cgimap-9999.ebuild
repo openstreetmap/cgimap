@@ -13,6 +13,7 @@ LICENSE="GPL-2"
 SLOT="0/9999"
 KEYWORDS=""
 
+# Doc and man will be installed by default (use FEATURES="nodoc noman" to disable it).
 IUSE="+apidb +pgsnapshot api07 experimental yajl static test"
 
 RDEPEND="
