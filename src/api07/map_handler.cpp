@@ -6,12 +6,15 @@
 #include <boost/format.hpp>
 
 #include <map>
+#include <vector>
 #include <utility>
 
 using boost::format;
 using std::string;
 using std::auto_ptr;
 using std::map;
+using std::vector;
+using std::pair;
 
 #define MAX_AREA 0.25
 #define MAX_NODES 50000
