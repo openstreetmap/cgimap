@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <maintainer type="person">
+    <email>andrew.aladev@hiqo-solutions.com</email>
+    <name>Andrew Aladev</name>
+  </maintainer>
+  <longdescription>
+    Mirror of CGImap, the optimized implementation of the OpenStreetMap "/map" API call.
+  </longdescription>
+  <use>
+    <flag name="apidb">Enable APIDB backend, as used by the OSM servers.</flag>
+    <flag name="pgsnapshot">Enable pgsnapshot backend.</flag>
+    <flag name="api07">Enable experimental API 0.7 features.</flag>
+    <flag name="experimental">Enable experimental other API 0.6 calls.</flag>
+    <flag name="yajl">Enable JSON output with the YAJL library. API 0.7 only.</flag>
+    <flag name="static">Build static libraries.</flag>
+    <flag name="test">Build and run tests.</flag>
+  </use>
+</pkgmetadata>
