@@ -33,11 +33,15 @@ DEPEND="${RDEPEND}"
 
 src_prepare() {
     default
+
+    epatch "$FILESDIR/cosmetics.patch"
+
     ./autogen.sh || die "autogen script failed"
 }
 
 src_configure() {
     default
+
     econf \
         $(use_enable apidb) \
         $(use_enable pgsnapshot) \
