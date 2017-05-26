@@ -7,7 +7,7 @@ inherit git-r3
 
 DESCRIPTION="Mirror of CGImap, the optimized implementation of the OpenStreetMap \"/map\" API call."
 HOMEPAGE="https://github.com/openstreetmap/cgimap"
-EGIT_REPO_URI="https://github.com/andrew-aladev/cgimap.git"
+EGIT_REPO_URI="https://github.com/openstreetmap/cgimap.git"
 
 LICENSE="GPL-2"
 SLOT="0/9999"

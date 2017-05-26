@@ -1,0 +1,227 @@
+diff --git a/include/cgimap/backend/apidb/cache.hpp b/include/cgimap/backend/apidb/cache.hpp
+index af64d8b..a37ff90 100644
+--- a/include/cgimap/backend/apidb/cache.hpp
++++ b/include/cgimap/backend/apidb/cache.hpp
+@@ -36,6 +36,8 @@ DEALINGS IN THE SOFTWARE.
+ #include <list>
+ #include <stdexcept>
+ #include <string>
++#include <utility>
++
+ #include <boost/config.hpp>
+ #include <boost/shared_ptr.hpp>
+ #include <boost/function.hpp>
+diff --git a/include/cgimap/http.hpp b/include/cgimap/http.hpp
+index 8e53e63..cb10675 100644
+--- a/include/cgimap/http.hpp
++++ b/include/cgimap/http.hpp
+@@ -4,7 +4,10 @@
+ #include <string>
+ #include <vector>
+ #include <stdexcept>
++#include <utility>
++
+ #include <boost/shared_ptr.hpp>
++
+ #include "cgimap/config.hpp"
+ 
+ #ifdef HAVE_LIBZ
+diff --git a/include/cgimap/output_formatter.hpp b/include/cgimap/output_formatter.hpp
+index c48280b..de4dc81 100644
+--- a/include/cgimap/output_formatter.hpp
++++ b/include/cgimap/output_formatter.hpp
+@@ -4,9 +4,12 @@
+ #include "cgimap/bbox.hpp"
+ #include "cgimap/types.hpp"
+ #include "cgimap/mime_types.hpp"
++
+ #include <list>
+ #include <vector>
+ #include <stdexcept>
++#include <utility>
++
+ #include <boost/optional.hpp>
+ #include <boost/date_time/posix_time/posix_time_types.hpp>
+ 
+diff --git a/include/cgimap/request.hpp b/include/cgimap/request.hpp
+index b7f4a8c..70e3c19 100644
+--- a/include/cgimap/request.hpp
++++ b/include/cgimap/request.hpp
+@@ -3,6 +3,8 @@
+ 
+ #include <string>
+ #include <vector>
++#include <utility>
++
+ #include <boost/shared_ptr.hpp>
+ #include <boost/date_time/posix_time/posix_time_types.hpp>
+ 
+diff --git a/src/api06/changeset_handler.cpp b/src/api06/changeset_handler.cpp
+index cf41e06..203205d 100644
+--- a/src/api06/changeset_handler.cpp
++++ b/src/api06/changeset_handler.cpp
+@@ -4,6 +4,7 @@
+ #include "cgimap/config.hpp"
+ 
+ #include <sstream>
++#include <utility>
+ 
+ using std::stringstream;
+ using std::vector;
+diff --git a/src/api06/handler_utils.cpp b/src/api06/handler_utils.cpp
+index 2858bbb..b0ce754 100644
+--- a/src/api06/handler_utils.cpp
++++ b/src/api06/handler_utils.cpp
+@@ -2,8 +2,11 @@
+ 
+ #include "cgimap/http.hpp"
+ #include "cgimap/request_helpers.hpp"
++
+ #include <map>
+ #include <vector>
++#include <utility>
++
+ #include <boost/algorithm/string.hpp>
+ #include <boost/lexical_cast.hpp>
+ #include <boost/format.hpp>
+diff --git a/src/api06/map_handler.cpp b/src/api06/map_handler.cpp
+index 05125a9..84278d1 100644
+--- a/src/api06/map_handler.cpp
++++ b/src/api06/map_handler.cpp
+@@ -2,8 +2,11 @@
+ #include "cgimap/http.hpp"
+ #include "cgimap/request_helpers.hpp"
+ #include "cgimap/logger.hpp"
++
+ #include <boost/format.hpp>
++
+ #include <map>
++#include <utility>
+ 
+ using boost::format;
+ using std::string;
+diff --git a/src/api07/map_handler.cpp b/src/api07/map_handler.cpp
+index 1f602a4..501b838 100644
+--- a/src/api07/map_handler.cpp
++++ b/src/api07/map_handler.cpp
+@@ -2,13 +2,19 @@
+ #include "cgimap/http.hpp"
+ #include "cgimap/request_helpers.hpp"
+ #include "cgimap/logger.hpp"
++
+ #include <boost/format.hpp>
++
+ #include <map>
++#include <vector>
++#include <utility>
+ 
+ using boost::format;
+ using std::string;
+ using std::auto_ptr;
+ using std::map;
++using std::vector;
++using std::pair;
+ 
+ #define MAX_AREA 0.25
+ #define MAX_NODES 50000
+diff --git a/src/backend/staticxml/staticxml.cpp b/src/backend/staticxml/staticxml.cpp
+index ed79cda..b53c9e5 100644
+--- a/src/backend/staticxml/staticxml.cpp
++++ b/src/backend/staticxml/staticxml.cpp
+@@ -10,7 +10,9 @@
+ #include <boost/format.hpp>
+ #include <boost/lexical_cast.hpp>
+ #include <boost/foreach.hpp>
++
+ #include <sstream>
++#include <utility>
+ 
+ namespace po = boost::program_options;
+ namespace pt = boost::posix_time;
+diff --git a/src/choose_formatter.cpp b/src/choose_formatter.cpp
+index dda56e7..918a299 100644
+--- a/src/choose_formatter.cpp
++++ b/src/choose_formatter.cpp
+@@ -18,6 +18,8 @@
+ #include <iostream>
+ #include <string>
+ #include <vector>
++#include <utility>
++
+ #include <boost/fusion/include/adapt_struct.hpp>
+ #include <boost/fusion/include/std_pair.hpp>
+ #include <boost/spirit/include/phoenix_core.hpp>
+diff --git a/src/http.cpp b/src/http.cpp
+index 07ba386..5cc739c 100644
+--- a/src/http.cpp
++++ b/src/http.cpp
+@@ -1,12 +1,16 @@
+ #include "cgimap/config.hpp"
+ #include "cgimap/http.hpp"
++
+ #include <vector>
++
+ #include <boost/foreach.hpp>
+ #include <boost/algorithm/string.hpp>
+ #include <boost/regex.hpp>
++
+ #include <iterator> // for distance
+ #include <cctype>   // for toupper, isxdigit
+ #include <sstream>
++#include <utility>
+ 
+ namespace al = boost::algorithm;
+ using std::string;
+diff --git a/src/json_formatter.cpp b/src/json_formatter.cpp
+index 861efe4..dfd2897 100644
+--- a/src/json_formatter.cpp
++++ b/src/json_formatter.cpp
+@@ -108,7 +108,7 @@ void json_formatter::write_common(const element_info &elem) {
+   writer->object_key("version");
+   writer->entry_int(elem.version);
+   writer->object_key("changeset");
+-  writer->entry_int(elem.changeset);
++  writer->entry_int((int) elem.changeset);
+   writer->object_key("timestamp");
+   writer->entry_string(elem.timestamp);
+   if (elem.display_name && elem.uid) {
+diff --git a/src/oauth.cpp b/src/oauth.cpp
+index 692f47a..dc5615a 100644
+--- a/src/oauth.cpp
++++ b/src/oauth.cpp
+@@ -6,6 +6,7 @@
+ #include <algorithm>
+ #include <vector>
+ #include <sstream>
++#include <utility>
+ 
+ #include <boost/foreach.hpp>
+ #ifdef HAVE_BOOST_LOCALE
+diff --git a/src/routes.cpp b/src/routes.cpp
+index 3bbf911..5e523af 100644
+--- a/src/routes.cpp
++++ b/src/routes.cpp
+@@ -41,6 +41,8 @@
+ #include <boost/algorithm/string.hpp>
+ #include <boost/optional.hpp>
+ 
++#include <utility>
++
+ using std::auto_ptr;
+ using std::list;
+ using std::string;
+diff --git a/test/test_http.cpp b/test/test_http.cpp
+index 6a7d876..a229e72 100644
+--- a/test/test_http.cpp
++++ b/test/test_http.cpp
+@@ -1,8 +1,10 @@
+ /* -*- coding: utf-8 -*- */
+ #include "cgimap/http.hpp"
++
+ #include <stdexcept>
+ #include <iostream>
+ #include <sstream>
++#include <utility>
+ 
+ namespace {
+ 
