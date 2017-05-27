@@ -3,7 +3,7 @@
 
 EAPI="6"
 
-inherit git-r3
+inherit eutils git-r3
 
 DESCRIPTION="Mirror of CGImap, the optimized implementation of the OpenStreetMap \"/map\" API call."
 HOMEPAGE="https://github.com/openstreetmap/cgimap"
