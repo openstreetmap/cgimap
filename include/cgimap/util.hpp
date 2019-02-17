@@ -19,6 +19,8 @@
 
 const int CHANGESET_MAX_ELEMENTS = 10000;
 const int WAY_MAX_NODES = 2000;
+const int RELATION_MAX_MEMBERS = 100000;
+const int OSM_ELEMENT_MAX_TAGS = 5000;
 const long SCALE = 10000000;
 
 const std::string MAX_TIME_OPEN = "1 day";
