@@ -484,7 +484,7 @@ class OSMChangeXMLParser {
       break;
     case context::relation:
       assert(!std::strcmp(element, "relation"));
-      if (!m_relation->is_valid()) {
+      if (!m_relation->is_valid(m_operation)) {
         throw xml_error{
           (boost::format("%1% does not include all mandatory fields") %
            m_relation->to_string())
