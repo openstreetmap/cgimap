@@ -1,19 +1,19 @@
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
-#include <crypto++/base64.h>
-#include <crypto++/config.h>
-#include <crypto++/filters.h>
-#include <crypto++/hex.h>
-#include <crypto++/md5.h>
-#include <crypto++/pwdbased.h>
-#include <crypto++/secblock.h>
-#include <crypto++/sha.h>
+#include <cryptopp/base64.h>
+#include <cryptopp/config.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/md5.h>
+#include <cryptopp/pwdbased.h>
+#include <cryptopp/secblock.h>
+#include <cryptopp/sha.h>
 #include <sys/types.h>
 #include <cassert>
 #include <iostream>
+#include <regex>
 #include <string>
 
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include "cgimap/basicauth.hpp"
@@ -67,8 +67,8 @@ std::string PasswordHash::PBKDF2_HMAC_SHA_string(const std::string& pass,
 
   PKCS5_PBKDF2_HMAC<T> pbkdf;
 
-  pbkdf.DeriveKey(result, result.size(), 0x00, (byte*)pass.data(),
-		  pass.size(), (byte*)salt.data(), salt.size(), iterations);
+  pbkdf.DeriveKey(result, result.size(), 0x00, reinterpret_cast<const byte*>(pass.data()),
+		  pass.size(), reinterpret_cast<const byte*>(salt.data()), salt.size(), iterations);
 
   ArraySource resultEncoder(
       result, result.size(), true,
@@ -101,7 +101,7 @@ namespace basicauth {
   {
     PasswordHash pwd_hash;
 
-    std::string display_name;
+    std::string user_name;
     std::string candidate;
 
     osm_user_id_t user_id;
@@ -114,18 +114,18 @@ namespace basicauth {
 
     auto auth_header = std::string(auth_hdr);
 
-    boost::smatch sm;
+    std::smatch sm;
 
     try {
-	boost::regex r("[Bb][Aa][Ss][Ii][Cc] ([A-Za-z0-9\\+\\/]+=*).*");
+	std::regex r("[Bb][Aa][Ss][Ii][Cc] ([A-Za-z0-9\\+\\/]+=*).*");
 
-	if (!boost::regex_match(auth_header, sm, r))
+	if (!std::regex_match(auth_header, sm, r))
 	  return boost::optional<osm_user_id_t>{};
 
 	if (sm.size() != 2)
 	  return boost::optional<osm_user_id_t>{};
 
-    } catch (boost::regex_error&) {
+    } catch (std::regex_error&) {
       return boost::optional<osm_user_id_t>{};
     }
 
@@ -143,16 +143,16 @@ namespace basicauth {
       return boost::optional<osm_user_id_t>{};
 
     try {
-      display_name = auth.substr(0, pos);
+      user_name = auth.substr(0, pos);
       candidate = auth.substr(pos + 1);
     } catch (std::out_of_range&) {
        return boost::optional<osm_user_id_t>{};
     }
 
-    if (display_name.empty() || candidate.empty())
+    if (user_name.empty() || candidate.empty())
       return boost::optional<osm_user_id_t>{};
 
-    auto user_exists = selection->get_user_id_pass(display_name, user_id, pass_crypt, pass_salt);
+    auto user_exists = selection->get_user_id_pass(user_name, user_id, pass_crypt, pass_salt);
 
     if (!user_exists)
       throw http::unauthorized("Incorrect user or password");

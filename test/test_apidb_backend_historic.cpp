@@ -53,10 +53,6 @@ void test_historic_elements(test_database &tdb) {
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
-
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(1)));
   editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
@@ -107,10 +103,6 @@ void test_historic_dup(test_database &tdb) {
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
@@ -173,10 +165,6 @@ void test_historic_dup_way(test_database &tdb) {
     "  (1, 1, 2, 2); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
@@ -245,10 +233,6 @@ void test_historic_dup_relation(test_database &tdb) {
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
-
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
   assert_equal<int>(
@@ -297,12 +281,16 @@ void test_node_history(test_database &tdb) {
     "VALUES "
     "  (3, 0, 0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL), "
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
+
+    "INSERT INTO node_tags(node_id, version, k, v) "
+    "VALUES "
+    "  (3, 1, 'key1_1', 'value1'), "
+    "  (3, 1, 'key1_2', 'value2'), "
+    "  (3, 1, 'key1_3', 'value3'), "
+    "  (3, 2, 'key2_1', 'value4'), "
+    "  (3, 2, 'key2_2', 'value5'); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(3);
@@ -319,14 +307,17 @@ void test_node_history(test_database &tdb) {
     test_formatter::node_t(
       element_info(3, 1, 2, "2015-03-02T18:27:00Z", 1, std::string("user_1"), true),
       0.0, 0.0,
-      tags_t()
+      tags_t( { { "key1_1", "value1" },
+                { "key1_2", "value2" },
+                { "key1_3", "value3" } })
       ),
     f.m_nodes[0], "first node written");
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
       element_info(3, 2, 2, "2015-03-02T18:27:00Z", 1, std::string("user_1"), false),
       0.0, 0.0,
-      tags_t()
+      tags_t( { { "key2_1", "value4" },
+                { "key2_2", "value5" } })
       ),
     f.m_nodes[1], "second node written");
 }
@@ -365,12 +356,16 @@ void test_way_history(test_database &tdb) {
     "  (1, 2, 3, 1), "
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
+
+    "INSERT INTO way_tags(way_id, version, k, v) "
+    "VALUES "
+    "  (1, 1, 'key1_1', 'value1'), "
+    "  (1, 1, 'key1_2', 'value2'), "
+    "  (1, 1, 'key1_3', 'value3'), "
+    "  (1, 2, 'key2_1', 'value4'), "
+    "  (1, 2, 'key2_2', 'value5'); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
@@ -387,14 +382,17 @@ void test_way_history(test_database &tdb) {
     test_formatter::way_t(
       element_info(1, 1, 3, "2016-09-06T19:54:00Z", 1, std::string("user_1"), true),
       {3, 2},
-      tags_t()
+      tags_t( { { "key1_1", "value1" },
+                { "key1_2", "value2" },
+                { "key1_3", "value3" } })
       ),
     f.m_ways[0], "first way written");
   assert_equal<test_formatter::way_t>(
     test_formatter::way_t(
       element_info(1, 2, 3, "2016-09-06T19:55:00Z", 1, std::string("user_1"), true),
       {3},
-      tags_t()
+      tags_t( { { "key2_1", "value4" },
+                { "key2_2", "value5" } })
       ),
     f.m_ways[1], "second way written");
 }
@@ -435,12 +433,16 @@ void test_relation_history(test_database &tdb) {
     "VALUES "
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
+
+    "INSERT INTO relation_tags(relation_id, version, k, v) "
+    "VALUES "
+    "  (1, 1, 'key1_1', 'value1'), "
+    "  (1, 1, 'key1_2', 'value2'), "
+    "  (1, 1, 'key1_3', 'value3'), "
+    "  (1, 2, 'key2_1', 'value4'), "
+    "  (1, 2, 'key2_2', 'value5'); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
@@ -461,14 +463,17 @@ void test_relation_history(test_database &tdb) {
     test_formatter::relation_t(
       element_info(1, 1, 3, "2016-09-19T18:48:00Z", 1, std::string("user_1"), true),
       relation1v1_members,
-      tags_t()
+      tags_t( { { "key1_1", "value1" },
+                { "key1_2", "value2" },
+                { "key1_3", "value3" } })
       ),
     f.m_relations[0], "first relation written");
   assert_equal<test_formatter::relation_t>(
     test_formatter::relation_t(
       element_info(1, 2, 3, "2016-09-19T18:49:00Z", 1, std::string("user_1"), true),
       relation1v2_members,
-      tags_t()
+      tags_t( { { "key2_1", "value4" },
+                { "key2_2", "value5" } })
       ),
     f.m_relations[1], "second relation written");
 }
@@ -499,10 +504,6 @@ void test_node_with_history_redacted(test_database &tdb) {
     "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2, NULL); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   // as a normal user, the redactions should not be visible
   {
@@ -586,10 +587,6 @@ void test_historical_nodes_redacted(test_database &tdb) {
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
-
   // as a normal user, the redactions should not be visible
   {
     std::vector<osm_edition_t> eds;
@@ -670,10 +667,6 @@ void test_way_with_history_redacted(test_database &tdb) {
     "  (1, 1, 2, 2); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   // as a normal user, the redactions should not be visible
   {
@@ -770,10 +763,6 @@ void test_historical_ways_redacted(test_database &tdb) {
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
-
   // as a normal user, the redactions should not be visible
   {
     std::vector<osm_edition_t> eds;
@@ -855,10 +844,6 @@ void test_relation_with_history_redacted(test_database &tdb) {
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   // as a normal user, the redactions should not be visible
   {
@@ -963,10 +948,6 @@ void test_historical_relations_redacted(test_database &tdb) {
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   // as a normal user, the redactions should not be visible
   {
@@ -1085,10 +1066,6 @@ void test_historic_way_node_order(test_database &tdb) {
     "  (1, 2, 10,  8); "
     "");
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(
-    sel->supports_historical_versions(), true,
-    "data selection supports historical versions");
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);

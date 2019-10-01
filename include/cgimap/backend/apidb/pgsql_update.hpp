@@ -13,7 +13,7 @@
 class pgsql_update : public data_update {
 
 public:
-  pgsql_update(pqxx::connection &conn, bool is_readonly);
+  pgsql_update(Transaction_Owner_Base& to, bool is_readonly);
 
   ~pgsql_update();
 
@@ -31,7 +31,7 @@ public:
 
   void commit();
 
-  bool is_readonly();
+  bool is_api_write_disabled();
 
   /**
    * abstracts the creation of transactions for the
@@ -41,11 +41,13 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual std::shared_ptr<data_update> make_data_update();
+    virtual std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base& to);
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();
+    virtual std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction();
 
   private:
     pqxx::connection m_connection;
-    bool m_readonly;
+    bool m_api_write_disabled;
     pqxx::quiet_errorhandler m_errorhandler;
   };
 

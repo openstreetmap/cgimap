@@ -1,21 +1,26 @@
 #include "cgimap/osm_diffresult_responder.hpp"
 #include "cgimap/config.hpp"
+#include "cgimap/logger.hpp"
 
 #include <chrono>
+#include <boost/format.hpp>
 
 using std::list;
 using std::shared_ptr;
 
-element_type as_elem_type(object_type o) { // @suppress("No return")
+namespace {
 
-  switch (o) {
+  element_type as_elem_type(object_type o) { // @suppress("No return")
 
-  case object_type::node:
-    return element_type_node;
-  case object_type::way:
-    return element_type_way;
-  case object_type::relation:
-    return element_type_relation;
+    switch (o) {
+
+      case object_type::node:
+	return element_type_node;
+      case object_type::way:
+	return element_type_way;
+      case object_type::relation:
+	return element_type_relation;
+    }
   }
 
 }
@@ -37,31 +42,31 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
 
     // Iterate over all elements in the sequence defined in the osmChange
     // message
-    for (const auto &item : change_tracking->osmchange_orig_sequence) {
+    for (const auto &item : m_diffresult) {
 
       switch (item.op) {
       case operation::op_create:
         fmt.write_diffresult_create_modify(
-            as_elem_type(item.obj_type), item.mapping.old_id,
-            item.mapping.new_id, item.mapping.new_version);
+            as_elem_type(item.obj_type), item.old_id,
+            item.new_id, item.new_version);
 
         break;
 
       case operation::op_modify:
         fmt.write_diffresult_create_modify(
-            as_elem_type(item.obj_type), item.mapping.old_id,
-            item.mapping.new_id, item.mapping.new_version);
+            as_elem_type(item.obj_type), item.old_id,
+            item.new_id, item.new_version);
 
         break;
 
       case operation::op_delete:
         if (item.deletion_skipped)
           fmt.write_diffresult_create_modify(
-              as_elem_type(item.obj_type), item.mapping.old_id,
-              item.mapping.new_id, item.mapping.new_version);
+              as_elem_type(item.obj_type), item.old_id,
+              item.new_id, item.new_version);
         else
           fmt.write_diffresult_delete(as_elem_type(item.obj_type),
-                                      item.orig_id);
+                                      item.old_id);
         break;
 
       case operation::op_undefined:
@@ -71,6 +76,8 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
     }
 
   } catch (const std::exception &e) {
+    logger::message(boost::format("Caught error in osm_diffresult_responder: %1%") %
+                        e.what());
     fmt.error(e);
   }
 

@@ -54,7 +54,6 @@ namespace {
     // Create new node
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -79,26 +78,51 @@ namespace {
       node_id = change_tracking->created_node_ids[0].new_id;
       node_version = change_tracking->created_node_ids[0].new_version;
 
-      if (sel->check_node_visibility(node_id) != data_selection::exists) {
-	  throw std::runtime_error("Node should be visible, but isn't");
+
+      {
+	auto sel = tdb.get_data_selection();
+
+	if (sel->check_node_visibility(node_id) != data_selection::exists) {
+	    throw std::runtime_error("Node should be visible, but isn't");
+	}
+
+	sel->select_nodes({ node_id });
+
+	test_formatter f;
+	sel->write_nodes(f);
+	assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+
+	// we don't want to find out about deviating timestamps here...
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, 1, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
+		131.0325171, -25.3448570,
+		tags_t({{"name", "Uluṟu"}, {"ele", "863"}})
+	    ),
+	    f.m_nodes[0], "first node written");
       }
 
-      sel->select_nodes({ node_id });
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
 
-      test_formatter f;
-      sel->write_nodes(f);
-      assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 1,
+	    "number of nodes selected");
 
-      // we don't want to find out about deviating timestamps here...
-      assert_equal<test_formatter::node_t>(
-	  test_formatter::node_t(
-	      element_info(node_id, 1, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
-	      131.0325171, -25.3448570,
-	      tags_t({{"name", "Uluṟu"}, {"ele", "863"}})
-	  ),
-	  f.m_nodes[0], "first node written");
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), 1, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, 1, 1, f2.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
+		131.0325171, -25.3448570,
+		tags_t({{"name", "Uluṟu"}, {"ele", "863"}})
+	    ),
+	    f2.m_nodes[0], "first node written");
+      }
     }
-
 
     // Create two nodes with the same old_id
     {
@@ -121,7 +145,6 @@ namespace {
     // Change existing node
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -138,25 +161,52 @@ namespace {
 
       if (change_tracking->modified_node_ids[0].new_id != node_id)
 	throw std::runtime_error((boost::format("Expected new_id == node_id, %1%, %2%")
-                                 % change_tracking->modified_node_ids[0].new_id
-				 % node_id).str());
+      % change_tracking->modified_node_ids[0].new_id
+      % node_id).str());
 
       node_version = change_tracking->modified_node_ids[0].new_version;
 
-      sel->select_nodes({ node_id });
+      {
+	// verify current tables
+	auto sel = tdb.get_data_selection();
 
-      test_formatter f;
-      sel->write_nodes(f);
-      assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+	sel->select_nodes({ node_id });
 
-      // we don't want to find out about deviating timestamps here...
-      assert_equal<test_formatter::node_t>(
-	  test_formatter::node_t(
-	      element_info(node_id, node_version, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
-	      20, 10,
-	      tags_t()
-	  ),
-	  f.m_nodes[0], "first node written");
+	test_formatter f;
+	sel->write_nodes(f);
+	assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+
+	// we don't want to find out about deviating timestamps here...
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
+		20, 10,
+		tags_t()
+	    ),
+	    f.m_nodes[0], "first node written");
+      }
+
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 2,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), 2, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f2.m_nodes[1].elem.timestamp, 1, std::string("user_1"), true),
+		20, 10,
+		tags_t()
+	    ),
+	    f2.m_nodes[1], "first node written");
+
+      }
     }
 
     // Change existing node with incorrect version number
@@ -179,7 +229,6 @@ namespace {
     // Change existing node multiple times
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -210,12 +259,35 @@ namespace {
         throw std::runtime_error("Bbox does not match expected size");
 
       upd->commit();
+
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 12,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), node_version, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f2.m_nodes[node_version - 1].elem.timestamp, 1, std::string("user_1"), true),
+		-27, 45,
+		tags_t({ {"key", "value9"} })
+	    ),
+	    f2.m_nodes[node_version - 1], "last node written");
+
+      }
+
     }
 
     // Delete existing node
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
+
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -230,8 +302,34 @@ namespace {
 	  throw std::runtime_error("Expected node_id in deleted_node_ids");
       }
 
-      if (sel->check_node_visibility(node_id) != data_selection::deleted) {
-	  throw std::runtime_error("Node should be deleted, but isn't");
+      {
+	// verify current tables
+        auto sel = tdb.get_data_selection();
+        if (sel->check_node_visibility(node_id) != data_selection::deleted) {
+	    throw std::runtime_error("Node should be deleted, but isn't");
+        }
+      }
+
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), node_version,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), node_version, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f2.m_nodes[node_version - 1].elem.timestamp, 1, std::string("user_1"), false),
+		-27, 45,
+		tags_t()
+	    ),
+	    f2.m_nodes[node_version - 1], "first node written");
+
       }
     }
 
@@ -331,7 +429,6 @@ namespace {
       // Create new way with two nodes
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -365,24 +462,51 @@ namespace {
            node_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
-        if (sel->check_way_visibility(way_id) != data_selection::exists) {
-  	  throw std::runtime_error("Way should be visible, but isn't");
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
+
+          if (sel->check_way_visibility(way_id) != data_selection::exists) {
+              throw std::runtime_error("Way should be visible, but isn't");
+          }
+
+          sel->select_ways({ way_id });
+
+          test_formatter f;
+          sel->write_ways(f);
+          assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, 1, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0], node_new_ids[1]}),
+		  tags_t({{"highway", "path"}})
+              ),
+	      f.m_ways[0], "first way written");
+
         }
 
-        sel->select_ways({ way_id });
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
 
-        test_formatter f;
-        sel->write_ways(f);
-        assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+          assert_equal<int>(
+              sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 1,
+	      "number of ways selected");
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::way_t>(
-  	  test_formatter::way_t(
-  	      element_info(way_id, 1, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
-	      nodes_t({node_new_ids[0], node_new_ids[1]}),
-  	      tags_t({{"highway", "path"}})
-  	  ),
-  	  f.m_ways[0], "first way written");
+          test_formatter f2;
+          sel->write_ways(f2);
+          assert_equal<size_t>(f2.m_ways.size(), 1, "number of ways written");
+
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, 1, 1, f2.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0], node_new_ids[1]}),
+		  tags_t({{"highway", "path"}})
+              ),
+	      f2.m_ways[0], "first way written");
+        }
       }
 
 
@@ -431,7 +555,6 @@ namespace {
       // Change existing way
      {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
 
@@ -455,20 +578,47 @@ namespace {
 
         way_version = change_tracking->modified_way_ids[0].new_version;
 
-        sel->select_ways({ way_id });
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
 
-        test_formatter f;
-        sel->write_ways(f);
-        assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+          sel->select_ways({ way_id });
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::way_t>(
-  	  test_formatter::way_t(
-  	      element_info(way_id, way_version, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
-	      nodes_t({node_new_ids[0]}),
-  	      tags_t({{"access", "yes"}})
-  	  ),
-  	  f.m_ways[0], "first way written");
+          test_formatter f;
+          sel->write_ways(f);
+          assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, way_version, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0]}),
+		  tags_t({{"access", "yes"}})
+              ),
+	      f.m_ways[0], "second way written");
+        }
+
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<int>(
+              sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 2,
+	      "number of ways selected");
+
+          test_formatter f2;
+          sel->write_ways(f2);
+          assert_equal<size_t>(f2.m_ways.size(), 2, "number of ways written");
+
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, way_version, 1, f2.m_ways[1].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0]}),
+		  tags_t({{"access", "yes"}})
+              ),
+	      f2.m_ways[1], "second way written");
+        }
+
       }
 
       // Change existing way with incorrect version number
@@ -482,6 +632,23 @@ namespace {
            way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0])}, {});
            way_updater->process_modify_ways();
   	 throw std::runtime_error("Modifying a way with wrong version should raise http conflict error");
+        } catch (http::exception &e) {
+  	  if (e.code() != 409)
+  	    throw std::runtime_error("Expected HTTP 409 Conflict");
+        }
+      }
+
+      // Change existing way with incorrect version number and non-existing node id
+      {
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto way_updater = upd->get_way_updater(change_tracking);
+
+        try {
+           way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(5934531745)}, {});
+           way_updater->process_modify_ways();
+  	 throw std::runtime_error("Modifying a way with wrong version and non-existing node id should raise http conflict error");
         } catch (http::exception &e) {
   	  if (e.code() != 409)
   	    throw std::runtime_error("Expected HTTP 409 Conflict");
@@ -577,7 +744,7 @@ namespace {
       // Delete existing way
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
+
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
 
@@ -591,9 +758,32 @@ namespace {
         if (change_tracking->deleted_way_ids[0] != way_id) {
   	  throw std::runtime_error("Expected way_id in deleted_way_ids");
         }
+        {
+          auto sel = tdb.get_data_selection();
+          if (sel->check_way_visibility(way_id) != data_selection::deleted) {
+              throw std::runtime_error("Way should be deleted, but isn't");
+          }
+        }
 
-        if (sel->check_way_visibility(way_id) != data_selection::deleted) {
-  	  throw std::runtime_error("Way should be deleted, but isn't");
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<int>(
+              sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), way_version,
+	      "number of ways selected");
+
+          test_formatter f2;
+          sel->write_ways(f2);
+          assert_equal<size_t>(f2.m_ways.size(), way_version, "number of ways written");
+
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, way_version, 1, f2.m_ways[way_version - 1].elem.timestamp, 1, std::string("user_1"), false),
+		  nodes_t(),
+		  tags_t()
+              ),
+	      f2.m_ways[way_version - 1], "deleted way written");
         }
       }
 
@@ -698,7 +888,7 @@ namespace {
       // Create new relation with two nodes, and one way
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
+
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -749,37 +939,68 @@ namespace {
         relation_id = change_tracking->created_relation_ids[0].new_id;
         relation_version = change_tracking->created_relation_ids[0].new_version;
 
-        if (sel->check_relation_visibility(relation_id) != data_selection::exists) {
-  	  throw std::runtime_error("Relation should be visible, but isn't");
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
+
+          if (sel->check_relation_visibility(relation_id) != data_selection::exists) {
+              throw std::runtime_error("Relation should be visible, but isn't");
+          }
+
+          sel->select_relations({relation_id });
+
+          test_formatter f;
+          sel->write_relations(f);
+          assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(relation_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+		  members_t(
+		      {
+            { element_type_node, node_new_ids[0], "role1" },
+	    { element_type_node, node_new_ids[1], "role2" },
+	    { element_type_way,  way_new_id, "" }
+		      }
+		  ),
+		  tags_t({{"boundary", "administrative"}})
+              ),
+	      f.m_relations[0], "first relation written");
         }
 
-        sel->select_relations({relation_id });
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
 
-        test_formatter f;
-        sel->write_relations(f);
-        assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+          assert_equal<int>(
+              sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), 1,
+	      "number of relations selected");
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::relation_t>(
-  	  test_formatter::relation_t(
-  	      element_info(relation_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
-	      members_t(
-		  {
-		      { element_type_node, node_new_ids[0], "role1" },
-		      { element_type_node, node_new_ids[1], "role2" },
-		      { element_type_way,  way_new_id, "" }
-		  }
-	      ),
-  	      tags_t({{"boundary", "administrative"}})
-  	  ),
-  	  f.m_relations[0], "first relation written");
+          test_formatter f2;
+          sel->write_relations(f2);
+          assert_equal<size_t>(f2.m_relations.size(), 1, "number of relations written");
+
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(relation_id, 1, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+		  members_t(
+		      {
+            { element_type_node, node_new_ids[0], "role1" },
+	    { element_type_node, node_new_ids[1], "role2" },
+	    { element_type_way,  way_new_id, "" }
+		      }
+		  ),
+		  tags_t({{"boundary", "administrative"}})
+              ),
+	      f2.m_relations[0], "first relation written");
+        }
       }
 
 
       // Create new relation with two nodes, and one way, only placeholder ids
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -798,7 +1019,7 @@ namespace {
 	      { "Node", -2, "role2" },
 	      { "Way",  -1, "" }
 	  },
-	  {{"boundary", ""}});
+	  {{"boundary", "administrative"}});
 
         rel_updater->process_new_relations();
 
@@ -825,30 +1046,63 @@ namespace {
            n_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
-        if (sel->check_relation_visibility(r_id) != data_selection::exists) {
-  	  throw std::runtime_error("Relation should be visible, but isn't");
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
+
+          if (sel->check_relation_visibility(r_id) != data_selection::exists) {
+              throw std::runtime_error("Relation should be visible, but isn't");
+          }
+
+          sel->select_relations({ r_id });
+
+          test_formatter f;
+          sel->write_relations(f);
+          assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(r_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+		  members_t(
+		      {
+            { element_type_node, n_new_ids[0], "role1" },
+	    { element_type_node, n_new_ids[1], "role2" },
+	    { element_type_way,  change_tracking->created_way_ids[0].new_id, "" }
+		      }
+		  ),
+		  tags_t({{"boundary", "administrative"}})
+              ),
+	      f.m_relations[0], "first relation written");
         }
 
-        sel->select_relations({ r_id });
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
 
-        test_formatter f;
-        sel->write_relations(f);
-        assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+          assert_equal<int>(
+              sel->select_relations_with_history({ osm_nwr_id_t( r_id ) }), 1,
+	      "number of relations selected");
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::relation_t>(
-  	  test_formatter::relation_t(
-  	      element_info(r_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
-	      members_t(
-		  {
-		      { element_type_node, n_new_ids[0], "role1" },
-		      { element_type_node, n_new_ids[1], "role2" },
-		      { element_type_way,  change_tracking->created_way_ids[0].new_id, "" }
-		  }
-	      ),
-  	      tags_t({{"boundary", ""}})
-  	  ),
-  	  f.m_relations[0], "first relation written");
+          test_formatter f2;
+          sel->write_relations(f2);
+          assert_equal<size_t>(f2.m_relations.size(), 1, "number of relations written");
+
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(r_id, 1, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+		  members_t(
+		      {
+            { element_type_node, n_new_ids[0], "role1" },
+	    { element_type_node, n_new_ids[1], "role2" },
+	    { element_type_way,  change_tracking->created_way_ids[0].new_id, "" }
+		      }
+		  ),
+		  tags_t({{"boundary", "administrative"}})
+              ),
+	      f2.m_relations[0], "first relation written");
+        }
+
       }
 
       // Create two relations with the same old_id
@@ -912,7 +1166,7 @@ namespace {
       // Create two relations with parent/child relationship
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
+
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
 
@@ -936,19 +1190,35 @@ namespace {
         relation_id_2 = change_tracking->created_relation_ids[1].new_id;
         relation_version_2 = change_tracking->created_relation_ids[1].new_version;
 
-        if (sel->check_relation_visibility(relation_id_1) != data_selection::exists) {
-  	      throw std::runtime_error("Relation should be visible, but isn't");
+        {
+          auto sel = tdb.get_data_selection();
+          if (sel->check_relation_visibility(relation_id_1) != data_selection::exists) {
+              throw std::runtime_error("Relation should be visible, but isn't");
+          }
+
+          if (sel->check_relation_visibility(relation_id_2) != data_selection::exists) {
+              throw std::runtime_error("Relation should be visible, but isn't");
+          }
+
+          sel->select_relations({relation_id_1, relation_id_2});
+
+          test_formatter f;
+          sel->write_relations(f);
+          assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written");
         }
 
-        if (sel->check_relation_visibility(relation_id_2) != data_selection::exists) {
-  	      throw std::runtime_error("Relation should be visible, but isn't");
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<int>(
+              sel->select_relations_with_history({relation_id_1, relation_id_2}), 2,
+	      "number of relations selected");
+
+          test_formatter f2;
+          sel->write_relations(f2);
+          assert_equal<size_t>(f2.m_relations.size(), 2, "number of relations written");
         }
-
-        sel->select_relations({relation_id_1, relation_id_2});
-
-        test_formatter f;
-        sel->write_relations(f);
-        assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written");
       }
 
       // Create relation with unknown node placeholder id
@@ -1008,7 +1278,6 @@ namespace {
       // Change existing relation
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1037,25 +1306,56 @@ namespace {
 
         relation_version = change_tracking->modified_relation_ids[0].new_version;
 
-        sel->select_relations({ relation_id });
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
+          sel->select_relations({ relation_id });
 
-        test_formatter f;
-        sel->write_relations(f);
-        assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+          test_formatter f;
+          sel->write_relations(f);
+          assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::relation_t>(
-  	  test_formatter::relation_t(
-  	      element_info(relation_id, relation_version, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
-	      members_t(
-		  {
-		      { element_type_node, node_new_ids[0], "stop_position" },
-		      { element_type_way,  way_new_id, "outer" }
-		  }
-	      ),
-  	      tags_t({{"admin_level", "4"}, {"boundary","administrative"}})
-  	  ),
-  	  f.m_relations[0], "first relation written");
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(relation_id, relation_version, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+		  members_t(
+		      {
+            { element_type_node, node_new_ids[0], "stop_position" },
+	    { element_type_way,  way_new_id, "outer" }
+		      }
+		  ),
+		  tags_t({{"admin_level", "4"}, {"boundary","administrative"}})
+              ),
+	      f.m_relations[0], "first relation written");
+        }
+
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<int>(
+              sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), 2,
+	      "number of relations selected");
+
+          test_formatter f2;
+          sel->write_relations(f2);
+          assert_equal<size_t>(f2.m_relations.size(), 2, "number of relations written");
+
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(relation_id, relation_version, 1, f2.m_relations[1].elem.timestamp, 1, std::string("user_1"), true),
+		  members_t(
+		      {
+            { element_type_node, node_new_ids[0], "stop_position" },
+	    { element_type_way,  way_new_id, "outer" }
+		      }
+		  ),
+		  tags_t({{"admin_level", "4"}, {"boundary","administrative"}})
+              ),
+	      f2.m_relations[1], "first relation written");
+        }
+
       }
 
       // Change existing relation with incorrect version number
@@ -1069,7 +1369,25 @@ namespace {
            rel_updater->modify_relation(1, relation_id, 666,
 					{ {"Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), ""} }, {});
            rel_updater->process_modify_relations();
-  	 throw std::runtime_error("Modifying a way with wrong version should raise http conflict error");
+  	 throw std::runtime_error("Modifying a relation with wrong version should raise http conflict error");
+        } catch (http::exception &e) {
+  	  if (e.code() != 409)
+  	    throw std::runtime_error("Expected HTTP 409 Conflict");
+        }
+      }
+
+      // Change existing relation with incorrect version number and non-existing node id
+      {
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+           rel_updater->modify_relation(1, relation_id, 666,
+					{ {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
+           rel_updater->process_modify_relations();
+  	 throw std::runtime_error("Modifying a relation with wrong version and non-existing node member id should raise http conflict error");
         } catch (http::exception &e) {
   	  if (e.code() != 409)
   	    throw std::runtime_error("Expected HTTP 409 Conflict");
@@ -1350,7 +1668,6 @@ namespace {
       // Delete existing relation
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
 
@@ -1365,8 +1682,32 @@ namespace {
   	  throw std::runtime_error("Expected way_id in deleted_relation_ids");
         }
 
-        if (sel->check_relation_visibility(relation_id) != data_selection::deleted) {
-  	  throw std::runtime_error("Relation should be deleted, but isn't");
+        {
+          auto sel = tdb.get_data_selection();
+          if (sel->check_relation_visibility(relation_id) != data_selection::deleted) {
+              throw std::runtime_error("Relation should be deleted, but isn't");
+          }
+        }
+
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<int>(
+              sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), relation_version,
+	      "number of relations selected");
+
+          test_formatter f2;
+          sel->write_relations(f2);
+          assert_equal<size_t>(f2.m_relations.size(), relation_version, "number of relations written");
+
+          assert_equal<test_formatter::relation_t>(
+              test_formatter::relation_t(
+        	  element_info(relation_id, relation_version, 1, f2.m_relations[relation_version - 1].elem.timestamp, 1, std::string("user_1"), false),
+		  members_t(),
+		  tags_t()
+              ),
+	      f2.m_relations[relation_version - 1], "relation deleted");
         }
       }
 
@@ -1504,7 +1845,7 @@ namespace {
   }
 
 
-  void process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
+  std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
   {
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
@@ -1516,7 +1857,7 @@ namespace {
     auto way_updater = upd->get_way_updater(change_tracking);
     auto relation_updater = upd->get_relation_updater(change_tracking);
 
-    changeset_updater->lock_current_changeset();
+    changeset_updater->lock_current_changeset(true);
 
     api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
                                      std::move(relation_updater), changeset);
@@ -1525,12 +1866,14 @@ namespace {
 
     parser.process_message(payload);
 
-    change_tracking->populate_orig_sequence_mapping();
+    auto diffresult = change_tracking->assemble_diffresult();
 
     changeset_updater->update_changeset(handler.get_num_changes(),
                                         handler.get_bbox());
 
     upd->commit();
+
+    return diffresult;
   }
 
   void test_osmchange_message(test_database &tdb) {
@@ -1551,7 +1894,7 @@ namespace {
       try {
 
       // Test unknown changeset id
-	process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+	auto diffresult = process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1234">
@@ -1576,7 +1919,7 @@ namespace {
 
   // Relation id -3 has a relation member with forward reference to relation id -4
 
-	process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+	  auto diffresult = process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1616,7 +1959,7 @@ namespace {
   // Testing correct parent/child sequence
   try {
 
-	process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+      auto diffresult = process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1647,6 +1990,24 @@ namespace {
 	  </osmChange>
   
 	)");
+
+      assert_equal<int>(diffresult.size(), 5, "diffresult rows written");
+
+      std::vector<osm_nwr_signed_id_t> old_ids{ -5, -6, -2, -3, -4};
+      std::vector<object_type> obj_type{ object_type::node,
+	                                 object_type::node,
+					 object_type::relation,
+					 object_type::relation,
+					 object_type::relation };
+
+      for (int i = 0; i < 5; i++) {
+	  assert_equal<osm_nwr_signed_id_t>(old_ids[i], diffresult[i].old_id, "diffresult old_id");
+	  assert_equal<osm_version_t>(1, diffresult[i].new_version, "diffresult new_version");
+	  assert_equal<int>(static_cast<int>(obj_type[i]), static_cast<int>(diffresult[i].obj_type), "diffresult obj_type");
+	  assert_equal<int>(static_cast<int>(operation::op_create), static_cast<int>(diffresult[i].op), "diffresult operation");
+	  assert_equal<bool>(false, diffresult[i].deletion_skipped, "diffresult deletion_skipped");
+      }
+
       } catch (http::exception& e) {
         throw std::runtime_error("Correct forward relation member reference should not trigger an exception");
       }
@@ -1709,6 +2070,68 @@ namespace {
 	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
     }
 
+    // User logging on with display name (different case)
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic REVNTzpwYXNzd29yZA==");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  throw std::runtime_error("Expected HTTP 200 OK: Log on with display name, different case");
+    }
+
+    // User logging on with email address rather than display name
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtb0BleGFtcGxlLmNvbTpwYXNzd29yZA==");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address");
+    }
+
+    // User logging on with email address with different case and additional whitespace rather than display name
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic ICAgZGVtb0BleGFtcGxlLkNPTSAgIDpwYXNzd29yZA==");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
+    }
 
     // User is blocked (needs_view)
     {
