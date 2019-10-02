@@ -545,6 +545,76 @@ int readonly_pgsql_selection::select_historical_nodes(
     sel_historic_nodes);
 }
 
+int readonly_pgsql_selection::select_historical_nodes_for_ways(
+  const std::vector<osm_nwr_id_t> &ids) {
+
+  if (ids.empty())
+    return 0;
+
+  m.prepare("select_historical_nodes_for_ways",
+     R"(     
+	  WITH way_ranges AS (
+	      SELECT
+		  way_id,
+		  timestamp AS timestamp_from,
+		  LEAD(timestamp, 1, '3000-01-01') OVER (PARTITION BY way_id ORDER BY TIMESTAMP) AS timestamp_to,
+		  version,
+		  MAX(version) FILTER(WHERE visible = true) OVER
+		       (PARTITION BY way_id 
+			  ORDER BY TIMESTAMP
+			  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS waynodes_available_version
+	      FROM
+		  ways
+	      WHERE
+		  way_id = ANY($1)
+	      AND (redaction_id IS NULL OR $2 = TRUE)
+	  ),
+	  waynode_ranges AS (
+	      SELECT
+		  wr.way_id,
+		  wr.timestamp_from,
+		  wr.timestamp_to,
+		  wn.node_id
+	      FROM
+		  way_ranges AS wr
+		  INNER JOIN way_nodes AS wn
+		       ON wr.way_id = wn.way_id
+		      AND wr.waynodes_available_version = wn.version
+	  ),
+	  node_ranges AS (
+	      SELECT
+		  node_id,
+		  TIMESTAMP AS timestamp_from,
+		  LEAD(TIMESTAMP, 1, '3000-01-01') OVER (PARTITION BY node_id ORDER BY TIMESTAMP) AS timestamp_to,
+		  version
+	      FROM
+		  nodes
+	      WHERE node_id IN (SELECT DISTINCT node_id FROM waynode_ranges)
+		AND (redaction_id IS NULL OR $2 = TRUE)
+	  )
+	  SELECT
+	      nr.node_id AS id,
+	      nr.version
+	  FROM
+	      node_ranges as nr
+	      INNER JOIN waynode_ranges AS wnr
+		   ON nr.timestamp_from < wnr.timestamp_to
+		  AND wnr.timestamp_from < nr.timestamp_to
+		  AND nr.node_id = wnr.node_id
+	  GROUP BY
+	      nr.node_id,
+	      nr.version
+	  ORDER BY
+	      nr.node_id,
+	      nr.version
+
+      )");
+
+  return insert_results(
+    m.exec_prepared("select_historical_nodes_for_ways", ids, m_redactions_visible),
+    sel_historic_nodes);
+}
+
 int readonly_pgsql_selection::select_historical_ways(
   const std::vector<osm_edition_t> &eds) {
 

@@ -19,6 +19,10 @@ int data_selection::select_ways_with_history(const std::vector<osm_nwr_id_t> &) 
   return 0;
 }
 
+int data_selection::select_historical_nodes_for_ways(const std::vector<osm_nwr_id_t> &) {
+  return 0;
+}
+
 int data_selection::select_historical_relations(const std::vector<osm_edition_t> &) {
   return 0;
 }
