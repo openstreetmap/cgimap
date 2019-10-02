@@ -543,6 +543,10 @@ struct static_data_selection : public data_selection {
     return select_historical<way>(m_historic_ways, editions);
   }
 
+  virtual int select_historical_nodes_for_ways(const std::vector<osm_nwr_id_t> &) {
+    return 0;  // TODO: not implemented
+  }
+
   virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &ids) {
     return select_historical_all<way>(m_historic_ways, ids);
   }

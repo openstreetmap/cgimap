@@ -104,6 +104,10 @@ public:
   /// nodes added to the selected set.
   virtual int select_historical_nodes(const std::vector<osm_edition_t> &);
 
+  // select all node versions that have ever been part of the given way ids
+  // returns the number of distinct (id, version) pairs selected.
+  virtual int select_historical_nodes_for_ways(const std::vector<osm_nwr_id_t> &);
+
   /// select all versions of the node with the given IDs. returns the number of
   /// distinct (id, version) pairs selected.
   virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
