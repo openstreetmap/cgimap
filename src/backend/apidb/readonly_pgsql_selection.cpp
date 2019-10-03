@@ -552,28 +552,22 @@ int readonly_pgsql_selection::select_historical_nodes_for_ways(
     return 0;
 
   m.prepare("select_historical_nodes_for_ways",
-     R"(     
-	  WITH way_nodes AS (
-	      SELECT 
-                 wn.node_id
-              FROM
-                 ways AS w
+     R"(  SELECT
+            n.node_id AS id,
+            n.version
+          FROM nodes AS n
+          INNER JOIN (
+	      SELECT wn.node_id
+                FROM ways AS w
               INNER JOIN way_nodes AS wn
                 ON w.way_id = wn.way_id
                AND w.version = wn.version
 	      WHERE w.way_id = ANY($1)
-	      AND (w.redaction_id IS NULL OR $2 = TRUE)
-	  )
-          SELECT
-            node_id AS id,
-            version
-          FROM
-            nodes
-          WHERE node_id IN (SELECT DISTINCT node_id FROM way_nodes)
-            AND (redaction_id IS NULL OR $2 = TRUE)
-          ORDER BY
-             node_id,
-             version;
+	       AND (w.redaction_id IS NULL OR $2 = TRUE)
+              GROUP BY wn.node_id
+          ) AS nw
+          ON n.node_id = nw.node_id
+          WHERE (n.redaction_id IS NULL OR $2 = TRUE)
       )");
 
   return insert_results(
