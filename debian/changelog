@@ -1,4 +1,4 @@
-openstreetmap-cgimap (0.8.7-1~jammy1) focal; urgency=medium
+openstreetmap-cgimap (0.8.7-1~jammy1) jammy; urgency=medium
 
   * Released version 0.8.7 (prelease)
   * Lots of cleanups
