@@ -2,7 +2,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include <sstream>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 using std::stringstream;
 using std::vector;
@@ -10,22 +10,20 @@ using std::vector;
 namespace api06 {
 
 way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
-                                       data_selection_ptr &w_)
+                                       data_selection &w_)
     : osm_current_responder(mt_, w_), id(id_) {
 
-  if (sel->select_ways({id}) == 0) {
+  if (sel.select_ways({id}) == 0) {
     std::ostringstream error;
     error << "Way " << id << " was not found.";
     throw http::not_found(error.str());
   }
   check_visibility();
-  sel->select_nodes_from_way_nodes();
+  sel.select_nodes_from_way_nodes();
 }
 
-way_full_responder::~way_full_responder() = default;
-
 void way_full_responder::check_visibility() {
-  switch (sel->check_way_visibility(id)) {
+  switch (sel.check_way_visibility(id)) {
 
   case data_selection::non_exist:
   {
@@ -45,14 +43,12 @@ void way_full_responder::check_visibility() {
 
 way_full_handler::way_full_handler(request &, osm_nwr_id_t id_) : id(id_) {
   logger::message(
-      (boost::format("starting way/full handler with id = %1%") % id).str());
+      fmt::format("starting way/full handler with id = {:d}", id));
 }
-
-way_full_handler::~way_full_handler() = default;
 
 std::string way_full_handler::log_name() const { return "way/full"; }
 
-responder_ptr_t way_full_handler::responder(data_selection_ptr &x) const {
+responder_ptr_t way_full_handler::responder(data_selection &x) const {
   return responder_ptr_t(new way_full_responder(mime_type, id, x));
 }
 

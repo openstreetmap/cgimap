@@ -3,7 +3,6 @@
 
 #include <chrono>
 
-using std::shared_ptr;
 
 namespace {
 
@@ -25,15 +24,15 @@ void extract_elem(const pqxx_tuple &row, element_info &elem,
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+    elem.uid = {};
+    elem.display_name = {};
   }
 }
 
 template <typename T>
-boost::optional<T> extract_optional(const pqxx_field &f) {
+std::optional<T> extract_optional(const pqxx_field &f) {
   if (f.is_null()) {
-    return boost::none;
+    return {};
   } else {
     return f.as<T>();
   }
@@ -52,8 +51,8 @@ void extract_changeset(const pqxx_tuple &row,
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+    elem.uid = {};
+    elem.display_name = {};
   }
 
   auto min_lat = extract_optional<int64_t>(row["min_lat"]);
@@ -67,7 +66,7 @@ void extract_changeset(const pqxx_tuple &row,
                              double(*max_lat) / global_settings::get_scale(),
                              double(*max_lon) / global_settings::get_scale());
   } else {
-    elem.bounding_box = boost::none;
+    elem.bounding_box = {};
   }
 
   elem.num_changes = row["num_changes"].as<size_t>();
@@ -76,22 +75,22 @@ void extract_changeset(const pqxx_tuple &row,
 void extract_tags(const pqxx_tuple &row, tags_t &tags) {
   tags.clear();
 
-  auto keys   = psql_array_to_vector(row["tag_k"].c_str());
-  auto values = psql_array_to_vector(row["tag_v"].c_str());
+  auto keys   = psql_array_to_vector(row["tag_k"].as_array());
+  auto values = psql_array_to_vector(row["tag_v"].as_array());
 
   if (keys.size()!=values.size()) {
     throw std::runtime_error("Mismatch in tags key and value size");
   }
 
-  for(int i=0; i<keys.size(); i++)
+  for(std::size_t i=0; i<keys.size(); i++)
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
 void extract_nodes(const pqxx_tuple &row, nodes_t &nodes) {
   nodes.clear();
-  auto ids = psql_array_to_vector(row["node_ids"].c_str());
+  auto ids = psql_array_to_vector(row["node_ids"].as_array());
   for (const auto & id : ids)
-    nodes.push_back(boost::lexical_cast<osm_nwr_id_t>(id));
+    nodes.push_back(std::stol(id));
 }
 
 element_type type_from_name(const char *name) {
@@ -126,17 +125,17 @@ void extract_members(const pqxx_tuple &row, members_t &members) {
   member_info member;
   members.clear();
 
-  auto types = psql_array_to_vector(row["member_types"].c_str());
-  auto ids   = psql_array_to_vector(row["member_ids"].c_str());
-  auto roles = psql_array_to_vector(row["member_roles"].c_str());
+  auto types = psql_array_to_vector(row["member_types"].as_array());
+  auto ids   = psql_array_to_vector(row["member_ids"].as_array());
+  auto roles = psql_array_to_vector(row["member_roles"].as_array());
 
   if (types.size()!=ids.size() || ids.size()!=roles.size()) {
     throw std::runtime_error("Mismatch in members types, ids and roles size");
   }
 
-  for (int i=0; i<ids.size(); i++) {
+  for (std::size_t i=0; i<ids.size(); i++) {
     member.type = type_from_name(types[i].c_str());
-    member.ref = boost::lexical_cast<osm_nwr_id_t>(ids[i]);
+    member.ref = std::stol(ids[i]);
     member.role = roles[i];
     members.push_back(member);
   }
@@ -146,18 +145,18 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
 
-  auto author_id    = psql_array_to_vector(row["comment_author_id"].c_str());
-  auto display_name = psql_array_to_vector(row["comment_display_name"].c_str());
-  auto body         = psql_array_to_vector(row["comment_body"].c_str());
-  auto created_at   = psql_array_to_vector(row["comment_created_at"].c_str());
+  auto author_id    = psql_array_to_vector(row["comment_author_id"].as_array());
+  auto display_name = psql_array_to_vector(row["comment_display_name"].as_array());
+  auto body         = psql_array_to_vector(row["comment_body"].as_array());
+  auto created_at   = psql_array_to_vector(row["comment_created_at"].as_array());
 
   if (author_id.size()!=display_name.size() || display_name.size()!=body.size()
       || body.size()!=created_at.size()) {
     throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
   }
 
-  for (int i=0; i<author_id.size(); i++) {
-    comment.author_id = boost::lexical_cast<osm_nwr_id_t>(author_id[i]);
+  for (std::size_t i=0; i<author_id.size(); i++) {
+    comment.author_id = std::stol(author_id[i]);
     comment.author_display_name = display_name[i];
     comment.body = body[i];
     comment.created_at = created_at[i];
