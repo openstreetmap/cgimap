@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.8.7-1~jammy1) focal; urgency=medium
+
+  * Released version 0.8.7 (prelease)
+  * Lots of cleanups
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 10 Jul 2022 12:35:11 +0000
+
 openstreetmap-cgimap (0.8.6-1~focal1) focal; urgency=medium
 
   * Released version 0.8.6
